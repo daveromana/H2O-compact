@@ -88,7 +88,10 @@ public class Score extends MRTask<Score> {
       val[0] = (float)ys.atd(row);
       _mb.perRow(cdists, val, weight, offset, m);
       // FIXME: make generic (save the p1 prediction for binomial)
-      allchks[allchks.length - 1].set(row, 1.0 - cdists[cdists.length - 1]); // FIXME: this is just for binomial!!!
+      if (cdists.length == 2)
+        allchks[allchks.length - 1].set(row, 1.0 - cdists[cdists.length - 1]); // FIXME: this is just for binomial!!!
+      else
+        allchks[allchks.length - 1].set(row, cdists[cdists.length - 1]);
     }
   }
 
@@ -102,10 +105,10 @@ public class Score extends MRTask<Score> {
   }
 
   // Run after the doAll scoring to convert the MetricsBuilder to a ModelMetrics
-  ModelMetricsSupervised makeModelMetrics(SharedTreeModel model, Frame fr, Vec pvec) {
+  ModelMetricsSupervised makeModelMetrics(SharedTreeModel model, Frame fr, Vec pvec, Vec wvec) {
     if (_mb instanceof ModelMetricsBinomial.MetricBuilderBinomial) { // FIXME
       ModelMetricsBinomial.MetricBuilderBinomial mbb = (ModelMetricsBinomial.MetricBuilderBinomial) _mb;
-      GainsLift gl = mbb.calculateGainsLift(model, pvec, _kresp.get(), fr.vec(model._output.weightsName()));
+      GainsLift gl = mbb.calculateGainsLift(model, pvec, _kresp.get(), wvec);
       return (ModelMetricsSupervised) mbb.makeModelMetrics(model, fr, gl);
     } else {
       long s1 = System.currentTimeMillis();

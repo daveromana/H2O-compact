@@ -683,7 +683,9 @@ public abstract class SharedTree<M extends SharedTreeModel<M,P,O>, P extends Sha
       tf.add("pvec", _pvec);
       _model._output._job = _job; // to allow to share the job for quantiles task
       Score sc = new Score(this,_model._output._ntrees>0/*score 0-tree model from scratch*/,oob,response()._key,_model._output.getModelCategory(),computeGainsLift).doAll(tf, build_tree_one_node);
-      ModelMetrics mm = sc.makeModelMetrics(_model, _parms.train(), _pvec);
+      if (! _pvec.isCompatibleWith(tf.anyVec()))
+        throw new IllegalStateException("Incompatible Vecs");
+      ModelMetrics mm = sc.makeModelMetrics(_model, _parms.train(), _pvec, _model._output.hasWeights() ? train().vec(_model._output.weightsIdx()) : null);
       out._training_metrics = mm;
       if (oob) out._training_metrics._description = "Metrics reported on Out-Of-Bag training samples";
       out._scored_train[out._ntrees].fillFrom(mm);
@@ -705,7 +707,7 @@ public abstract class SharedTree<M extends SharedTreeModel<M,P,O>, P extends Sha
         Score scv = new Score(this, startTree,false, vresponse()._key, _model._output.getModelCategory(), computeGainsLift)
                 .doAll(v, build_tree_one_node);
         long s1 = System.currentTimeMillis();
-        ModelMetrics mmv = scv.makeModelMetrics(_model, _parms.valid(), _pvvec);
+        ModelMetrics mmv = scv.makeModelMetrics(_model, _parms.valid(), _pvvec, _model._output.hasWeights()? v.vec(_model._output.weightsIdx()) : null);
         long s2 = System.currentTimeMillis();
         Log.info("MK: Times = " + (s1 - s0) + "; " + (s2 - s1) + ", key=" + _parms._valid.toString());
         out._validation_metrics = mmv;

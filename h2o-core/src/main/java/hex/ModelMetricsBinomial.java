@@ -207,7 +207,7 @@ public class ModelMetricsBinomial extends ModelMetricsSupervised {
         gl = new GainsLift(p1, resp, weight);
         gl.exec(m != null ? m._output._job : null);
       } catch(Throwable t) {
-        t.printStackTrace();
+        throw t; // FIXME (this din't throw before)!
       }
       return gl;
     }
